@@ -470,7 +470,7 @@ class CAMBdata(F2003Class):
         lmax = self._lmax_setting(lmax)
         cmb = self.get_total_cls(lmax, CMB_unit=CMB_unit)
         lens = self.get_lens_potential_cls(lmax, CMB_unit=CMB_unit)
-        save_cmb_power_array(filename, np.hstack((cmb, lens)), "TT EE BB TE PP PT PE")
+        save_cmb_power_array(filename, np.hstack((cmb, lens)), "TT EE BB TE EB TB PP PT PE")
 
     def get_cmb_power_spectra(
         self,
@@ -481,9 +481,9 @@ class CAMBdata(F2003Class):
         raw_cl=False,
     ):
         r"""
-        Get CMB power spectra, as requested by the 'spectra' argument. All power spectra are
-        :math:`\ell(\ell+1)C_\ell/2\pi` self-owned numpy arrays (0..lmax, 0..3), where 0..3 index
-        are TT, EE, BB, TE, unless raw_cl is True in which case return just :math:`C_\ell`.
+        Get CMB power spectra, as requested by the 'spectra' argument. The ``total`` and ``tensor`` spectra are
+        returned with columns TT, EE, BB, TE, EB, TB. Other CMB spectra retain the standard TT, EE, BB, TE
+        column ordering unless raw_cl is True, in which case the values are returned as :math:`C_\ell`.
         For the lens_potential the power spectrum returned is that of the deflection.
 
         Note that even if lmax is None, all spectra a returned to the same lmax, appropriate
@@ -1194,10 +1194,10 @@ class CAMBdata(F2003Class):
         :param lmax: lmax to output to
         :param CMB_unit: scale results from dimensionless. Use 'muK' for :math:`\mu K^2` units for CMB :math:`C_\ell`
         :param raw_cl: return :math:`C_\ell` rather than :math:`\ell(\ell+1)C_\ell/2\pi`
-        :return: numpy array CL[0:lmax+1,0:4], where 0..3 indexes TT, EE, BB, TE
+        :return: numpy array CL[0:lmax+1,0:6], where columns are TT, EE, BB, TE, EB, TB
         """
         lmax = self._lmax_setting(lmax)
-        res = np.empty((lmax + 1, 4))
+        res = np.empty((lmax + 1, 6))
         opt = c_int(lmax)
         CAMB_SetTotCls(byref(self), byref(opt), res)
         self._scale_cls(res, CMB_unit, raw_cl)
@@ -1210,13 +1210,13 @@ class CAMBdata(F2003Class):
         :param lmax: lmax to output to
         :param CMB_unit: scale results from dimensionless. Use 'muK' for :math:`\mu K^2` units for CMB :math:`C_\ell`
         :param raw_cl: return :math:`C_\ell` rather than :math:`\ell(\ell+1)C_\ell/2\pi`
-        :return: numpy array CL[0:lmax+1,0:4], where 0..3 indexes TT, EE, BB, TE
+        :return: numpy array CL[0:lmax+1,0:6], where columns are TT, EE, BB, TE, EB, TB
         """
 
         if lmax is None:
             lmax = self.Params.max_l_tensor
         lmax = self._lmax_setting(lmax, unlensed=True)
-        res = np.empty((lmax + 1, 4))
+        res = np.empty((lmax + 1, 6))
         opt = c_int(lmax)
         CAMB_SetTensorCls(byref(self), byref(opt), res)
         self._scale_cls(res, CMB_unit, raw_cl)
@@ -1245,10 +1245,14 @@ class CAMBdata(F2003Class):
         :param lmax: lmax to output to
         :param CMB_unit: scale results from dimensionless. Use 'muK' for :math:`\mu K^2` units for CMB :math:`C_\ell`
         :param raw_cl: return :math:`C_\ell` rather than :math:`\ell(\ell+1)C_\ell/2\pi`
-        :return: numpy array CL[0:lmax+1,0:4], where 0..3 indexes TT, EE, BB, TE.
+        :return: numpy array CL[0:lmax+1,0:6], where columns are TT, EE, BB, TE, EB, TB.
         """
         lmax = self._lmax_setting(lmax, unlensed=True)
-        return self.get_unlensed_scalar_cls(lmax, CMB_unit, raw_cl) + self.get_tensor_cls(lmax, CMB_unit, raw_cl)
+        res = np.empty((lmax + 1, 6))
+        opt = c_int(lmax)
+        CAMB_SetUnlensedCls(byref(self), byref(opt), res)
+        self._scale_cls(res, CMB_unit, raw_cl)
+        return res
 
     def get_lensed_scalar_cls(self, lmax=None, CMB_unit=None, raw_cl=False):
         r"""

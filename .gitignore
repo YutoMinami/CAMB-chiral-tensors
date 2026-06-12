@@ -79,6 +79,7 @@ lensing_cgrads.f90
 !inifiles/params_spk.ini
 !inifiles/planck_2018.ini
 !inifiles/planck_2018_acc.ini
+!inifiles/planck_2018_GWEB.ini
 !inifiles/sources_defaults.ini
 prompts.txt
 

@@ -53,6 +53,11 @@
         real(dl) :: pivot_tensor = 0.05_dl
         real(dl) :: As = 1._dl
         real(dl) :: At = 1._dl !A_T at k_0_tensor if tensor_parameterization==tensor_param_AT
+        real(dl) :: r_vac = 0._dl
+        real(dl) :: r_ast = 0._dl
+        real(dl) :: sig = 0.5_dl
+        real(dl) :: kp = 0.05_dl
+        real(dl) :: calP_zeta = 2.1e-9_dl
         real(dl), private :: curv = 0._dl !curvature parameter
     contains
     procedure :: Init => TInitialPowerLaw_Init
@@ -60,6 +65,8 @@
     procedure, nopass :: SelfPointer => TInitialPowerLaw_SelfPointer
     procedure :: ScalarPower => TInitialPowerLaw_ScalarPower
     procedure :: TensorPower => TInitialPowerLaw_TensorPower
+    procedure :: FevenPower => TInitialPowerLaw_FevenPower
+    procedure :: FoddPower => TInitialPowerLaw_FoddPower
     procedure :: ReadParams => TInitialPowerLaw_ReadParams
     procedure :: Effective_ns => TInitalPowerLaw_Effective_ns
     end Type TInitialPowerLaw
@@ -172,6 +179,26 @@
         TInitialPowerLaw_TensorPower*tanh(PiByTwo*sqrt(-k**2/this%curv-3))
     end function TInitialPowerLaw_TensorPower
 
+    function TInitialPowerLaw_FevenPower(this, k)
+    use constants
+    class(TInitialPowerLaw) :: this
+    real(dl), intent(in) :: k
+    real(dl) TInitialPowerLaw_FevenPower
+
+    TInitialPowerLaw_FevenPower = 4._dl * const_pi * this%calP_zeta * &
+        (this%r_vac + this%r_ast * exp(-log(k/this%kp)**2 / (2._dl * this%sig**2)))
+    end function TInitialPowerLaw_FevenPower
+
+    function TInitialPowerLaw_FoddPower(this, k)
+    use constants
+    class(TInitialPowerLaw) :: this
+    real(dl), intent(in) :: k
+    real(dl) TInitialPowerLaw_FoddPower
+
+    TInitialPowerLaw_FoddPower = 4._dl * const_pi * this%calP_zeta * &
+        (-this%r_ast) * exp(-log(k/this%kp)**2 / (2._dl * this%sig**2))
+    end function TInitialPowerLaw_FoddPower
+
     function CompatKey(Ini, name)
     class(TIniFile), intent(in) :: Ini
     character(LEN=*), intent(in) :: name
@@ -191,8 +218,10 @@
     class(TInitialPowerLaw) :: this
     class(TIniFile), intent(in) :: Ini
     logical :: WantTensors
+    logical :: tensor_PV
 
     WantTensors = Ini%Read_Logical('get_tensor_cls', .false.)
+    tensor_PV = Ini%Read_Logical('tensor_PV', .false.)
 
     call Ini%Read('pivot_scalar', this%pivot_scalar)
     call Ini%Read('pivot_tensor', this%pivot_tensor)
@@ -214,12 +243,21 @@
         else
             call Ini%Read(CompatKey(Ini,'initial_ratio'), this%r)
         end if
+        if (tensor_PV) then
+            call Ini%Read('r_vac', this%r_vac)
+            call Ini%Read('r_ast', this%r_ast)
+            call Ini%Read('sig', this%sig)
+            call Ini%Read('kp', this%kp)
+            call Ini%Read('calP_zeta', this%calP_zeta)
+        end if
     else
         this%tensor_parameterization = tensor_param_rpivot
         this%nt = 0._dl
         this%ntrun = 0._dl
         this%r = 0._dl
         this%At = 1._dl
+        this%r_vac = 0._dl
+        this%r_ast = 0._dl
     end if
 
     call Ini%Read(CompatKey(Ini,'scalar_amp'),this%As)

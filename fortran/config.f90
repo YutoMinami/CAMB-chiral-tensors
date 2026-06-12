@@ -29,10 +29,11 @@
     !Computed output power spectra data
 
     integer, parameter :: C_Temp = 1, C_E = 2, C_Cross =3, C_Phi = 4, C_PhiTemp = 5, C_PhiE=6
-    integer, parameter :: CT_Temp =1, CT_E = 2, CT_B = 3, CT_Cross=  4
+    integer, parameter :: CT_Temp =1, CT_E = 2, CT_B = 3, CT_Cross=  4, CT_EB = 5, CT_TB = 6
     integer, parameter :: name_tag_len = 12
     character(LEN=name_tag_len), dimension(C_PhiE), parameter :: C_name_tags = ['TT','EE','TE','PP','TP','EP']
     character(LEN=name_tag_len), dimension(CT_Cross), parameter :: CT_name_tags = ['TT','EE','BB','TE']
+    character(LEN=name_tag_len), dimension(CT_TB), parameter :: CT_PV_name_tags = ['TT','EE','BB','TE','EB','TB']
     character(LEN=name_tag_len), dimension(7), parameter :: lens_pot_name_tags = ['TT','EE','BB','TE','PP','TP','EP']
 
     real(dl), parameter :: OmegaKFlat = 5e-7_dl !Value at which to use flat code

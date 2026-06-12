@@ -315,9 +315,14 @@
     end if
 
     if (CP%WantTensors .and. global_error_flag==0) then
-        allocate(iCl_Tensor(State%CLdata%CTransTens%ls%nl,CT_Temp:CT_Cross), source=0._dl)
-        call CalcTensCls(State%CLdata%CTransTens,GetInitPowerArrayTens)
-        if (DebugMsgs .and. Feedbacklevel > 0) write (*,*) 'CalcTensCls'
+        allocate(iCl_Tensor(State%CLdata%CTransTens%ls%nl,CT_Temp:CT_TB), source=0._dl)
+        if (CP%tensor_PV) then
+            call CalcTensPV(State%CLdata%CTransTens,GetInitPowerArrayFeven,GetInitPowerArrayFodd)
+            if (DebugMsgs .and. Feedbacklevel > 0) write (*,*) 'CalcTensPV'
+        else
+            call CalcTensCls(State%CLdata%CTransTens,GetInitPowerArrayTens)
+            if (DebugMsgs .and. Feedbacklevel > 0) write (*,*) 'CalcTensCls'
+        end if
     end if
 
     if (global_error_flag==0) then
@@ -2233,6 +2238,30 @@
 
     end subroutine GetInitPowerArrayTens
 
+    subroutine GetInitPowerArrayFeven(pows,ks, numks)
+    integer, intent(in) :: numks
+    real(dl) pows(numks), ks(numks)
+    integer i
+
+    do i = 1, numks
+        pows(i) = CP%InitPower%FevenPower(ks(i))
+        if (global_error_flag/=0) exit
+    end do
+
+    end subroutine GetInitPowerArrayFeven
+
+    subroutine GetInitPowerArrayFodd(pows,ks, numks)
+    integer, intent(in) :: numks
+    real(dl) pows(numks), ks(numks)
+    integer i
+
+    do i = 1, numks
+        pows(i) = CP%InitPower%FoddPower(ks(i))
+        if (global_error_flag/=0) exit
+    end do
+
+    end subroutine GetInitPowerArrayFodd
+
 
     subroutine CalcScalCls(CTrans)
     use Bispectrum
@@ -2477,6 +2506,62 @@
     end subroutine CalcScalCls2
 
 
+    subroutine CalcTensPV(CTrans, GetInitFeven, GetInitFodd)
+    implicit none
+    Type(ClTransferData) :: CTrans
+    external GetInitFeven, GetInitFodd
+    integer j, q_ix, lab, ell
+    real(dl) F_even, F_odd, measure
+    real(dl) pows_Feven(CTrans%q%npoints)
+    real(dl) pows_Fodd(CTrans%q%npoints)
+    real(dl) ks(CTrans%q%npoints), measures(CTrans%q%npoints)
+    real(dl), allocatable :: int_k(:,:,:)
+
+    allocate(int_k(CT_Temp:CT_TB, 1:CTrans%ls%nl, 1:CTrans%q%npoints), source=0._dl)
+
+    do q_ix = 1, CTrans%q%npoints
+        ks(q_ix) = CTrans%q%points(q_ix)
+        measures(q_ix) = CTrans%q%dpoints(q_ix)/CTrans%q%points(q_ix)
+    end do
+    call GetInitFeven(pows_Feven, ks, CTrans%q%npoints)
+    call GetInitFodd(pows_Fodd, ks, CTrans%q%npoints)
+
+    !$OMP PARALLEL DO DEFAULT(SHARED),SCHEDULE(STATIC,6) &
+    !$OMP & PRIVATE(q_ix, measure, F_even, F_odd, ell, lab)
+    do j=1,CTrans%ls%nl
+        ell = CTrans%ls%l(j)
+        do q_ix = 1, CTrans%q%npoints
+            measure = measures(q_ix)
+            F_even = measure * pows_Feven(q_ix)
+            F_odd = measure * pows_Fodd(q_ix)
+
+            int_k(CT_Temp,j,q_ix) = F_even * &
+                (sqrt(dble(ell+2)*dble(ell+1)*dble(ell)*dble(ell-1)) * &
+                CTrans%Delta_p_l_k(CT_Temp,j,q_ix) / (-4._dl))**2
+            int_k(CT_E,j,q_ix) = F_even * (CTrans%Delta_p_l_k(CT_E,j,q_ix) / (-4._dl))**2
+            int_k(CT_B,j,q_ix) = F_even * (CTrans%Delta_p_l_k(CT_B,j,q_ix) / 4._dl)**2
+            int_k(CT_Cross,j,q_ix) = F_even * &
+                sqrt(dble(ell+2)*dble(ell+1)*dble(ell)*dble(ell-1)) * &
+                CTrans%Delta_p_l_k(CT_Temp,j,q_ix) / (-4._dl) * &
+                CTrans%Delta_p_l_k(CT_E,j,q_ix) / (-4._dl)
+            int_k(CT_TB,j,q_ix) = F_odd * &
+                sqrt(dble(ell+2)*dble(ell+1)*dble(ell)*dble(ell-1)) * &
+                CTrans%Delta_p_l_k(CT_Temp,j,q_ix) / (-4._dl) * &
+                CTrans%Delta_p_l_k(CT_B,j,q_ix) / 4._dl
+            int_k(CT_EB,j,q_ix) = F_odd * &
+                CTrans%Delta_p_l_k(CT_E,j,q_ix) / (-4._dl) * &
+                CTrans%Delta_p_l_k(CT_B,j,q_ix) / 4._dl
+        end do
+
+        do lab = CT_Temp, CT_TB
+            iCl_tensor(j, lab) = dble(ell) * dble(ell+1) * sum(int_k(lab, j, :)) / (2._dl * const_pi)
+        end do
+    end do
+    !$OMP END PARALLEL DO
+
+    deallocate(int_k)
+    end subroutine CalcTensPV
+
     subroutine CalcTensCls(CTrans, GetInitPowers)
     implicit none
     Type(ClTransferData) :: CTrans
@@ -2619,7 +2704,7 @@
 
     if (CP%WantTensors) then
         associate(ls=>State%CLdata%CTransTens%ls)
-            do i = CT_Temp, CT_Cross
+            do i = CT_Temp, merge(CT_TB, CT_Cross, CP%tensor_PV)
                 call ls%InterpolateClArr(iCl_tensor(1,i),State%CLData%Cl_tensor(ls%lmin, i))
             end do
         end associate

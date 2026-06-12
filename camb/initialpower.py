@@ -135,6 +135,11 @@ class InitialPowerLaw(InitialPower):
         ("pivot_tensor", c_double),
         ("As", c_double),
         ("At", c_double),
+        ("r_vac", c_double),
+        ("r_ast", c_double),
+        ("sig", c_double),
+        ("kp", c_double),
+        ("calP_zeta", c_double),
     )
 
     _fortran_class_name_ = "TInitialPowerLaw"
@@ -154,6 +159,11 @@ class InitialPowerLaw(InitialPower):
         pivot_scalar=0.05,
         pivot_tensor=0.05,
         parameterization="tensor_param_rpivot",
+        r_vac=1e-1,
+        r_ast=1.0,
+        sig=0.5,
+        kp=0.05,
+        calP_zeta=2.1e-9,
     ):
         r"""
         Set parameters using standard power law parameterization. If nt=None, uses inflation consistency relation.
@@ -206,6 +216,11 @@ class InitialPowerLaw(InitialPower):
         self.r = r
         self.pivot_scalar = pivot_scalar
         self.pivot_tensor = pivot_tensor
+        self.r_vac = r_vac
+        self.r_ast = r_ast
+        self.sig = sig
+        self.kp = kp
+        self.calP_zeta = calP_zeta
         return self
 
     def has_tensors(self):

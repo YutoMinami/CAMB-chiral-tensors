@@ -1,83 +1,90 @@
-===================
-CAMB
-===================
-:CAMB: Code for Anisotropies in the Microwave Background
-:Author: Antony Lewis and Anthony Challinor
-:Homepage: https://camb.info/
+====================
+CAMB-chiral-tensors
+====================
 
-.. image:: https://img.shields.io/pypi/v/camb.svg?style=flat
-   :target: https://pypi.python.org/pypi/camb/
-.. image:: https://img.shields.io/conda/vn/conda-forge/camb.svg
-   :target: https://anaconda.org/conda-forge/camb
-.. image:: https://readthedocs.org/projects/camb/badge/?version=latest
-   :target: https://camb.readthedocs.io/en/latest
-.. image:: https://github.com/cmbant/camb/actions/workflows/tests.yml/badge.svg?branch=master
-  :target: https://github.com/cmbant/CAMB/actions
-.. image:: https://mybinder.org/badge_logo.svg
-  :target: https://mybinder.org/v2/gh/cmbant/CAMB/HEAD?filepath=docs%2FCAMBdemo.ipynb
+This repository is a modified version of `CAMB <https://camb.info/>`_, based on the official CAMB code and intended
+for public use of primordial chiral tensor calculations that generate tensor-driven EB/TB in the CMB.
 
-Description and installation
-=============================
+Upstream CAMB
+=============
 
-CAMB is a cosmology code for calculating cosmological observables, including
-CMB, lensing, source count and 21cm angular power spectra, matter power spectra, transfer functions
-and background evolution. The code is in Python, with numerical code implemented in fast modern Fortran.
+- Original code: `cmbant/CAMB <https://github.com/cmbant/CAMB>`_
+- Original authors: Antony Lewis and Anthony Challinor
+- CAMB homepage: https://camb.info/
 
-See the `CAMB python example notebook <https://camb.readthedocs.io/en/latest/CAMBdemo.html>`_ for a
-quick introduction to how to use the CAMB Python package.
+This repository keeps CAMB's original license text in ``LICENCE.txt``. The original CAMB license and any upstream
+conditions continue to apply to this modified distribution.
 
-For a standard non-editable installation use::
+What Is Added Here
+==================
 
-    pip install camb [--user]
+This fork adds a minimal public implementation of primordial parity-violating tensor spectra:
 
-The --user is optional and only required if you don't have write permission to your main python installation.
-To install from source, clone from github using::
+- ``tensor_PV`` to enable the chiral tensor calculation path
+- primordial parameters ``r_vac``, ``r_ast``, ``sig``, ``kp``, ``calP_zeta``
+- tensor EB/TB support through the Python results interface
 
-    git clone --recursive https://github.com/cmbant/CAMB
+The chiral gravitational-wave contribution to the CMB EB/TB spectra implemented here follows:
 
-Then install using::
+- B. Thorne, T. Fujita, M. Hazumi, N. Katayama, E. Komatsu and M. Shiraishi,
+  ``Finding the chiral gravitational wave background of an axion-SU(2) inflationary model using CMB observations
+  and laser interferometers'', Phys. Rev. D 97 (2018) no.4, 043506,
+  `doi:10.1103/PhysRevD.97.043506 <https://doi.org/10.1103/PhysRevD.97.043506>`_,
+  `arXiv:1707.03240 <https://arxiv.org/abs/1707.03240>`_.
 
-    pip install -e ./CAMB [--user]
+The original EB/TB chiral-GW implementation used for this repository was developed with implementation guidance
+from M. Shiraishi.
 
-For development, install with dev dependencies and setup pre-commit hooks::
+For the Python API, tensor-related spectra are returned in the order::
 
-    pip install -e ./CAMB[dev] [--user]
-    pre-commit install
+    TT, EE, BB, TE, EB, TB
 
-See `CONTRIBUTING.md <CONTRIBUTING.md>`_ for full development setup instructions.
+In particular, ``get_tensor_cls()``, ``get_total_cls()`` and ``get_cmb_power_spectra()["tensor"/"total"]``
+return six columns in that order.
 
-You will need gfortran installed to compile (usually included with gcc by default).
-If you have gfortran installed, "python setup.py make" (and other standard setup commands) will build the Fortran
-library on all systems (including Windows without directly using a Makefile).
+Build
+=====
 
-The python wrapper provides a module called "camb" documented in the Python `CAMB documentation <https://camb.readthedocs.io/en/latest/>`_.
+Clone with submodules::
 
-After installation you can also run CAMB from the command line reading parameters from a .ini file, e.g.::
+    git clone --recursive https://github.com/YutoMinami/CAMB-chiral-tensors.git
 
-  camb inifiles/planck_2018.ini
+To build the shared library from the Fortran side::
 
-To compile the Fortran command-line code run "make camb" in the fortran directory. For full details
-see the  `ReadMe <https://camb.info/readme.html>`_.
+    cd CAMB-chiral-tensors/fortran
+    make python PYCAMB_OUTPUT_DIR=../camb/
 
-Branches
-=============================
+To build the command-line executable::
 
-The master branch contains latest changes to the main release version.
+    cd CAMB-chiral-tensors/fortran
+    make camb
 
-There is a test suite, which runs automatically on GitHub actions for new commits and pull requests.
-Reference results and test outputs are stored in the `test outputs repository <https://github.com/cmbant/CAMB_test_outputs/>`_. Tests can also be run locally.
+Usage
+=====
 
-To reproduce legacy results, see these branches:
+Example command-line run::
 
- - *CAMB_sources* is the old public `CAMB Sources <https://camb.info/sources/>`_ code.
- - *CAMB_v0* is the old Fortran-oriented (gfortran 4.8-compatible) version as used by the Planck 2018 analysis.
- - *rayleigh* includes frequency-dependent Rayleigh scattering
- - *python2* is the last Python 2 compatible version
+    ./fortran/camb inifiles/planck_2018_GWEB.ini
 
-===================
+Minimal Python example::
 
-.. raw:: html
+    import camb
+    pars = camb.read_ini("inifiles/planck_2018_GWEB.ini")
+    results = camb.get_results(pars)
+    tensor_cls = results.get_tensor_cls()
+    total_cls = results.get_total_cls()
+    # Column order: TT, EE, BB, TE, EB, TB
+    eb = tensor_cls[:, 4]
+    tb = tensor_cls[:, 5]
 
-    <a href="https://www.sussex.ac.uk/astronomy/"><img src="https://cdn.cosmologist.info/antony/Sussex_white.svg" style="height:200px" height="200px"></a>
-    <a href="https://erc.europa.eu/"><img src="https://cdn.cosmologist.info/antony/ERC_white.svg" style="height:200px" height="200px"></a>
-    <a href="https://stfc.ukri.org/"><img src="https://cdn.cosmologist.info/antony/STFC_white.svg" style="height:200px" height="200px"></a>
+Notes
+=====
+
+- ``inifiles/planck_2018_GWEB.ini`` provides a minimal example configuration for primordial EB/TB.
+- A compatibility check against legacy spectra used in ``ForPrimordialEB/LimitToChiralGW.ipynb`` was carried out
+  with the old file ``planck_2018_sig2.000e-01_kp5.000e-02.pkl``. The tensor ``BB``, ``EB`` and ``TB`` spectra
+  were reproduced by this fork to better than about ``1e-4`` in relative peak amplitude.
+- The EB/TB chiral-GW part is an extension on top of CAMB and should be cited separately from upstream CAMB when
+  used in scientific work.
+- This repository is focused on the CAMB modification itself; analysis notebooks and plotting pipelines are not
+  included here.
