@@ -112,6 +112,8 @@
         logical   :: WantScalars = .true.
         logical   :: WantTensors = .false.
         logical   :: WantVectors = .false.
+        logical   :: tensor_highl = .false.
+        logical   :: tensor_PV = .false.
 
         logical   :: WantDerivedParameters = .true.!calculate various derived parameters  (ThermoDerivedParams)
         logical   :: Want_cl_2D_Array = .true.
@@ -354,6 +356,14 @@
     end if
     if (this%tcmb < 2.7d0.or.this%tcmb > 2.8d0) then
         write(*,*) '  Warning: Tcmb has units of K.  Your have:', this%tcmb
+    end if
+    if (.not. this%WantTensors .and. this%tensor_highl) then
+        OK = .false.
+        write(*,*) 'tensor_highl requires get_tensor_cls = T'
+    end if
+    if (.not. this%WantTensors .and. this%tensor_PV) then
+        OK = .false.
+        write(*,*) 'tensor_PV requires get_tensor_cls = T'
     end if
 
     if (this%yhe < 0.2d0.or.this%yhe > 0.8d0) then

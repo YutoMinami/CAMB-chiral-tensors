@@ -136,6 +136,11 @@ def _update_initial_power_ini(params: model.CAMBparams, state: CambIniFile) -> N
             set_param(state, "tensor_amp(1)", initial_power_model.At)
         else:
             set_param(state, "initial_ratio(1)", initial_power_model.r)
+        set_param(state, "r_vac", initial_power_model.r_vac)
+        set_param(state, "r_ast", initial_power_model.r_ast)
+        set_param(state, "sig", initial_power_model.sig)
+        set_param(state, "kp", initial_power_model.kp)
+        set_param(state, "calP_zeta", initial_power_model.calP_zeta)
         return
 
     raise CAMBValueError(f"write_ini does not support initial power class {initial_power_model.__class__.__name__}")
@@ -214,6 +219,8 @@ def _update_ini_state_from_params(params: model.CAMBparams, state: CambIniFile) 
     set_param(state, "get_scalar_cls", params.WantScalars)
     set_param(state, "get_vector_cls", params.WantVectors)
     set_param(state, "get_tensor_cls", params.WantTensors)
+    set_param(state, "tensor_highl", params.tensor_highl)
+    set_param(state, "tensor_PV", params.tensor_PV)
     set_param(state, "want_CMB", params.Want_CMB)
     set_param(state, "want_CMB_lensing", params.Want_CMB_lensing)
     set_param(state, "get_transfer", params.WantTransfer)

@@ -416,7 +416,7 @@
     subroutine CAMB_SetTotCls(Data,lmax, tot_scalar_Cls)
     type(CAMBdata) Data
     integer, intent(IN) :: lmax
-    real(dl), intent(OUT) :: tot_scalar_cls(4, 0:lmax)
+    real(dl), intent(OUT) :: tot_scalar_cls(6, 0:lmax)
     integer l
 
     tot_scalar_cls = 0
@@ -431,8 +431,8 @@
             endif
         end if
         if (Data%CP%WantTensors .and. l <= Data%CP%Max_l_tensor) then
-            tot_scalar_cls(1:4,l) = tot_scalar_cls(1:4,l) &
-                + Data%CLData%Cl_tensor(l, CT_Temp:CT_Cross)
+            tot_scalar_cls(1:4,l) = tot_scalar_cls(1:4,l) + Data%CLData%Cl_tensor(l, CT_Temp:CT_Cross)
+            tot_scalar_cls(5:6,l) = Data%CLData%Cl_tensor(l, CT_EB:CT_TB)
         end if
     end do
 
@@ -441,7 +441,7 @@
     subroutine CAMB_SetUnlensedCls(Data,lmax, unlensed_cls)
     Type(CAMBdata) :: Data
     integer, intent(IN) :: lmax
-    real(dl), intent(OUT) :: unlensed_cls(4,0:lmax)
+    real(dl), intent(OUT) :: unlensed_cls(6,0:lmax)
     integer l
 
     unlensed_cls = 0
@@ -452,8 +452,8 @@
         end if
         if (Data%CP%WantTensors &
             .and. l <= Data%CP%Max_l_tensor) then
-            unlensed_cls(1:4,l) = unlensed_cls(1:4,l) &
-                + Data%CLData%Cl_tensor(l, CT_Temp:CT_Cross)
+            unlensed_cls(1:4,l) = unlensed_cls(1:4,l) + Data%CLData%Cl_tensor(l, CT_Temp:CT_Cross)
+            unlensed_cls(5:6,l) = Data%CLData%Cl_tensor(l, CT_EB:CT_TB)
         end if
     end do
 
@@ -511,14 +511,14 @@
     subroutine CAMB_SetTensorCls(Data,lmax, tensor_Cls)
     Type(CAMBdata) :: Data
     integer, intent(IN) :: lmax
-    real(dl), intent(OUT) :: tensor_Cls(4, 0:lmax)
+    real(dl), intent(OUT) :: tensor_Cls(6, 0:lmax)
     integer lmx
 
     tensor_Cls = 0
     if (Data%CP%WantTensors) then
         lmx = min(lmax,Data%CP%Max_l_tensor)
-        tensor_Cls(1:4,Data%CP%Min_l:lmx) = &
-            transpose(Data%CLData%Cl_Tensor(Data%CP%Min_l:lmx, CT_Temp:CT_Cross))
+        tensor_Cls(1:6,Data%CP%Min_l:lmx) = &
+            transpose(Data%CLData%Cl_Tensor(Data%CP%Min_l:lmx, CT_Temp:CT_TB))
     end if
 
     end subroutine CAMB_SetTensorCls

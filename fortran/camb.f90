@@ -266,6 +266,8 @@
     P%WantScalars = Ini%Read_Logical('get_scalar_cls')
     P%WantVectors = Ini%Read_Logical('get_vector_cls', .false.)
     P%WantTensors = Ini%Read_Logical('get_tensor_cls', .false.)
+    P%tensor_PV = Ini%Read_Logical('tensor_PV', .false.)
+    P%tensor_highl = Ini%Read_Logical('tensor_highl', .false.)
 
     P%Want_CMB =  Ini%Read_Logical('want_CMB',.true.)
     P%Want_CMB_lensing =  P%Want_CMB .or. Ini%Read_Logical('want_CMB_lensing',.true.)

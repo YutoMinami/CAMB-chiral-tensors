@@ -90,6 +90,8 @@
     contains
     procedure :: ScalarPower => TInitialPower_ScalarPower
     procedure :: TensorPower => TInitialPower_TensorPower
+    procedure :: FevenPower => TInitialPower_FevenPower
+    procedure :: FoddPower => TInitialPower_FoddPower
     procedure :: Init => TInitialPower_Init
     procedure :: Effective_ns => TInitalPower_Effective_ns
     end type TInitialPower
@@ -207,6 +209,24 @@
     TInitialPower_TensorPower = 0
     error stop 'TensorPower not implemented'
     end function TInitialPower_TensorPower
+
+    function TInitialPower_FevenPower(this, k)
+    class(TInitialPower) :: this
+    real(dl), intent(in) ::k
+    real(dl) TInitialPower_FevenPower
+
+    TInitialPower_FevenPower = 0
+    error stop 'FevenPower not implemented'
+    end function TInitialPower_FevenPower
+
+    function TInitialPower_FoddPower(this, k)
+    class(TInitialPower) :: this
+    real(dl), intent(in) ::k
+    real(dl) TInitialPower_FoddPower
+
+    TInitialPower_FoddPower = 0
+    error stop 'FoddPower not implemented'
+    end function TInitialPower_FoddPower
 
 
     subroutine TInitialPower_Init(this, Params)

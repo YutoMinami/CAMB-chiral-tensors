@@ -2819,7 +2819,7 @@
 
         if (CP%WantTensors) then
             if (allocated(this%Cl_tensor)) deallocate(this%Cl_tensor)
-            allocate(this%Cl_tensor(CP%Max_l_tensor, CT_Temp:CT_Cross), source=0._dl)
+            allocate(this%Cl_tensor(CP%Max_l_tensor, CT_Temp:CT_TB), source=0._dl)
         end if
     end associate
 
@@ -2912,21 +2912,22 @@
     end if
 
     if (CP%WantTensors .and. TensFile /= '') then
-        unit = open_file_header(TensFile, 'L', CT_name_tags)
+        unit = open_file_header(TensFile, 'L', CT_PV_name_tags)
         do il=lmin,CP%Max_l_tensor
-            write(unit,'(1I6,4E15.6)')il, fact*this%Cl_tensor(il, CT_Temp:CT_Cross)
+            write(unit,'(1I6,6E15.6)')il, fact*this%Cl_tensor(il, CT_Temp:CT_TB)
         end do
         close(unit)
     end if
 
     if (CP%WantTensors .and. CP%WantScalars .and. TotFile /= '') then
-        unit = open_file_header(TotFile, 'L', CT_name_tags)
+        unit = open_file_header(TotFile, 'L', CT_PV_name_tags)
         do il=lmin,CP%Max_l_tensor
-            write(unit,'(1I6,4E15.6)')il, fact*(this%Cl_scalar(il, C_Temp:C_E)+ this%Cl_tensor(il,C_Temp:C_E)), &
-                fact*this%Cl_tensor(il, CT_B), fact*(this%Cl_scalar(il, C_Cross) + this%Cl_tensor(il, CT_Cross))
+            write(unit,'(1I6,6E15.6)')il, fact*(this%Cl_scalar(il, C_Temp:C_E)+ this%Cl_tensor(il,C_Temp:C_E)), &
+                fact*this%Cl_tensor(il, CT_B), fact*(this%Cl_scalar(il, C_Cross) + this%Cl_tensor(il, CT_Cross)), &
+                fact*this%Cl_tensor(il, CT_EB:CT_TB)
         end do
         do il=CP%Max_l_tensor+1,CP%Max_l
-            write(unit,'(1I6,4E15.6)')il ,fact*this%Cl_scalar(il,C_Temp:C_E), 0._dl, fact*this%Cl_scalar(il,C_Cross)
+            write(unit,'(1I6,6E15.6)')il ,fact*this%Cl_scalar(il,C_Temp:C_E), 0._dl, fact*this%Cl_scalar(il,C_Cross), 0._dl, 0._dl
         end do
         close(unit)
     end if
@@ -2941,13 +2942,13 @@
 
 
     if (CP%WantScalars .and. CP%WantTensors .and. CP%DoLensing .and. LensTotFile /= '') then
-        unit = open_file_header(LensTotFile, 'L', CT_name_tags)
+        unit = open_file_header(LensTotFile, 'L', CT_PV_name_tags)
         do il=lmin,min(CP%Max_l_tensor,this%lmax_lensed)
-            write(unit,'(1I6,4E15.6)')il, fact*(this%Cl_lensed(il,CT_Temp:CT_Cross)+ &
-                this%Cl_tensor(il, CT_Temp:CT_Cross))
+            write(unit,'(1I6,6E15.6)')il, fact*(this%Cl_lensed(il,CT_Temp:CT_Cross)+ &
+                this%Cl_tensor(il, CT_Temp:CT_Cross)), fact*this%Cl_tensor(il, CT_EB:CT_TB)
         end do
         do il=min(CP%Max_l_tensor,this%lmax_lensed)+1,this%lmax_lensed
-            write(unit,'(1I6,4E15.6)')il, fact*this%Cl_lensed(il, CT_Temp:CT_Cross)
+            write(unit,'(1I6,6E15.6)')il, fact*this%Cl_lensed(il, CT_Temp:CT_Cross), 0._dl, 0._dl
         end do
         close(unit)
     end if
@@ -3034,8 +3035,8 @@
     if (CP%WantTensors) then
         if (.not.CP%WantScalars) Norm = 1/this%Cl_tensor(lnorm, C_Temp)
         !Otherwise Norm already set correctly
-        this%Cl_tensor(CP%Min_l:CP%Max_l_tensor, CT_Temp:CT_Cross) =  &
-            this%Cl_tensor(CP%Min_l:CP%Max_l_tensor, CT_Temp:CT_Cross) * Norm
+        this%Cl_tensor(CP%Min_l:CP%Max_l_tensor, CT_Temp:CT_TB) =  &
+            this%Cl_tensor(CP%Min_l:CP%Max_l_tensor, CT_Temp:CT_TB) * Norm
     end if
 
     end subroutine TCLdata_NormalizeClsAtL

@@ -287,6 +287,8 @@ class CAMBparams(F2003Class):
         ("WantScalars", c_bool, "Calculates scalar modes"),
         ("WantTensors", c_bool, "Calculate tensor modes"),
         ("WantVectors", c_bool, "Calculate vector modes"),
+        ("tensor_highl", c_bool, "Calculate tensor high ell"),
+        ("tensor_PV", c_bool, "Enable primordial parity-violating tensor spectra"),
         ("WantDerivedParameters", c_bool, "Calculate derived parameters"),
         ("Want_cl_2D_array", c_bool, "For the C_L, include NxN matrix of all possible cross-spectra between sources"),
         ("Want_CMB", c_bool, "Calculate the temperature and polarization power spectra"),
